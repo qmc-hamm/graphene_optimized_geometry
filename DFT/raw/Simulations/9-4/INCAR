@@ -1,0 +1,19 @@
+ general:
+   ISTART = 0; ICHARG = 2;
+   EDIFFG = -0.05
+   EDIFF = 1E-7
+   ENCUT = 400
+   LAECHG = .TRUE.
+   ALGO= Fast
+   LREAL = Auto
+
+   IBRION = 2
+   IVDW = 21
+   NSW = 50
+   NPAR = 6
+   ISIF = 4
+
+
+
+   ISMEAR =    0  ; SIGMA = 0.05
+   LORBIT = 11

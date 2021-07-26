@@ -1,0 +1,13 @@
+#!/bin/bash -l                                                                          
+#$ -S /bin/bash                                                                         
+#$ -cwd                                                                                 
+#$ -q normal                                                                          
+#$ -pe mpi 36                                                                           
+#$ -l h_rt=96:00:00                                                                      
+#$ -o job.stdout                                                                        
+#$ -N BLG6.01                                                                          
+
+module unload rocks-openmpi
+module load mpi/openmpi-x86_64
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/share/apps/intel/mkl/lib/intel64
+mpirun -n 36 /share/apps/vasp.5.4.4/bin/vasp_std
