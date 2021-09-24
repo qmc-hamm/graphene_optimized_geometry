@@ -1,4 +1,6 @@
-Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by DFT simulations. 
+Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by DFT simulations.
+
+
 Input: POSCAR file of twist angles, Lattice constant, coordinates, number of atoms, twist angle, method, [m,n], date
 Output: best_estimate.hdf5
 
