@@ -59,7 +59,7 @@ def quiverplotter(xyzi, dx, dy, mag, figname):
     fig.set_size_inches(7.5, 10)
     plt.tight_layout()
     fig.savefig(figname, dpi=200)
-    plt.show()
+    # plt.show()
 
 def scatterplotter(x,y,z, dia_dot, vmin, vmax, caption, filename):
     plt.figure()
@@ -80,14 +80,22 @@ theta = '0.99'
 theta1 = str(theta)
 st = theta1.split('.')
 folder = st[0]+'-'+st[1]
-folder1 = "KC-REBO/raw/simulations/"+folder+"/"
-filename1 = folder1+"dump_initial.txt";   
-filename2 = folder1+"dump_final.txt";  
-figname1 = 'in-plane_bottom.png'
-figname2 = 'in-plane_top.png'
+
+# prefix = 'ouyang'
+prefix = 'refit'
+if prefix == 'ouyang':
+    folder1 = "KC-REBO/raw/simulations/"+folder+"/"
+elif prefix == 'refit':
+    folder1 = "FitttedKC-REBO/raw/simulations/"+folder+"/"
+filename1 = folder1+"dump_initial.txt"
+filename2 = folder1+"dump_final.txt"
+
+figname1 = f'{prefix}_in-plane_bottom.png'
+figname2 = f'{prefix}_in-plane_top.png'
 f=open(filename1, "r")
 lines=f.readlines()
 identity, atom_num, lenx, leny, lenz, xyzi, sigmai, energyi = dump_reader(filename1)
+print(lenz)
 xyzib = xyzi[identity==1,:]  
 xyzit = xyzi[identity==2,:] 
 sigmai = sigmai/10
@@ -110,15 +118,16 @@ magt = np.sqrt(dxt**2+dyt**2)
 quiverplotter(xyzib, dxb, dyb, magb, figname1)
 quiverplotter(xyzit, dxt, dyt, magt, figname2)
 
-scatterplotter(xyzfb[:,0], xyzfb[:,1], xyzfb[:,2], 5, 2.9, 3.1, "z-displacement ($\AA$)","out-disp-bottom.png")
-scatterplotter(xyzft[:,0], xyzft[:,1], xyzft[:,2], 5, 6.3, 6.5, "z-displacement ($\AA$)","out-disp-top.png")
+
+scatterplotter(xyzfb[:,0], xyzfb[:,1], xyzfb[:,2], 5, 2.9, 3.1, "z-displacement ($\AA$)",f"{prefix}_out-disp-bottom.png")
+scatterplotter(xyzft[:,0], xyzft[:,1], xyzft[:,2], 5, 6.3, 6.5, "z-displacement ($\AA$)",f"{prefix}_out-disp-top.png")
 energyfb = energyf[identity==1]  
 energyft = energyf[identity==2] 
-scatterplotter(xyzfb[:,0], xyzfb[:,1], energyfb[:], 5, np.min(energyfb), np.max(energyfb), "Energy (eV/atom)","energy-bottom.png")
-scatterplotter(xyzft[:,0], xyzft[:,1], energyft[:], 5, np.min(energyft), np.max(energyft), "Energy (eV/atom)","energy-top.png")
-scatterplotter(xyzfb[:,0], xyzfb[:,1], sigmafb[:,1], 5, np.min(sigmafb[:,1]), np.max(sigmafb[:,1]), "$\sigma_{xx}$ (MPa)","sigmaxx-bottom.png")
-scatterplotter(xyzft[:,0], xyzft[:,1], sigmaft[:,1], 5, np.min(sigmaft[:,1]), np.max(sigmaft[:,1]), "$\sigma_{xx}$ (MPa)","sigmaxx-top.png")
-scatterplotter(xyzfb[:,0], xyzfb[:,1], sigmafb[:,2], 5, np.min(sigmafb[:,2]), np.max(sigmafb[:,2]), "$\sigma_{yy}$ (MPa)","sigmayy-bottom.png")
-scatterplotter(xyzft[:,0], xyzft[:,1], sigmaft[:,2], 5, np.min(sigmaft[:,2]), np.max(sigmaft[:,2]), "$\sigma_{yy}$ (MPa)","sigmayy-top.png")
+scatterplotter(xyzfb[:,0], xyzfb[:,1], energyfb[:], 5, np.min(energyfb), np.max(energyfb), "Energy (eV/atom)",f"{prefix}_energy-bottom.png")
+scatterplotter(xyzft[:,0], xyzft[:,1], energyft[:], 5, np.min(energyft), np.max(energyft), "Energy (eV/atom)",f"{prefix}_energy-top.png")
+scatterplotter(xyzfb[:,0], xyzfb[:,1], sigmafb[:,1], 5, np.min(sigmafb[:,1]), np.max(sigmafb[:,1]), "$\sigma_{xx}$ (MPa)",f"{prefix}_sigmaxx-bottom.png")
+scatterplotter(xyzft[:,0], xyzft[:,1], sigmaft[:,1], 5, np.min(sigmaft[:,1]), np.max(sigmaft[:,1]), "$\sigma_{xx}$ (MPa)",f"{prefix}_sigmaxx-top.png")
+scatterplotter(xyzfb[:,0], xyzfb[:,1], sigmafb[:,2], 5, np.min(sigmafb[:,2]), np.max(sigmafb[:,2]), "$\sigma_{yy}$ (MPa)",f"{prefix}_sigmayy-bottom.png")
+scatterplotter(xyzft[:,0], xyzft[:,1], sigmaft[:,2], 5, np.min(sigmaft[:,2]), np.max(sigmaft[:,2]), "$\sigma_{yy}$ (MPa)",f"{prefix}_sigmayy-top.png")
 
 

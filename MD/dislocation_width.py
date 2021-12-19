@@ -57,10 +57,15 @@ theta = 0.99
 theta1 = str(theta)
 st = theta1.split('.')
 folder = st[0]+'-'+st[1]
-folder1 = "KC-REBO/raw/simulations/"+folder+"/"
+
+prefix = 'ouyang'
+if prefix == 'ouyang':
+    folder1 = "KC-REBO/raw/simulations/"+folder+"/"
+elif prefix == 'refit':
+    folder1 = "FitttedKC-REBO/raw/simulations/"+folder+"/"
 filename1 = folder1+"/"+"dump_initial.txt";   
 filename2 = folder1+"/"+"dump_final.txt";  
-figname = folder1+'/dislocation_width.png'
+figname = f'{prefix}_dislocation_width.png'
 
 identity, atom_num, lenx, leny, lenz, xyzi, sigmai, energyi = dump_reader(filename1)
 xyzib = xyzi[identity==1,:]  
@@ -98,8 +103,10 @@ Y = X_Y_Spline(X)
 plt.plot(X,Y, '-k', linewidth = 5)
 plt.xticks(fontsize = 18)
 plt.yticks(fontsize = 18)
+plt.xlabel('y_coordinate (ang)')
+plt.ylabel('in-plane dislocation (ang)')
 fig = plt.gcf()
 fig.set_size_inches(7.5, 7.5)
 plt.tight_layout()
 fig.savefig(figname, dpi=200)
-plt.show()
+# plt.show()
