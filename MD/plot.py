@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.interpolate import make_interp_spline
+from scipy.signal import find_peaks
 import seaborn as sns
 import re
 
@@ -30,7 +32,6 @@ def dumpfile_to_df(dumpfile):
     return df, latvec
 
 def scatterplotter(x, y, z, caption, output):
-
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 5))
     p = plt.scatter(x, y, c=z, cmap='jet', s=2, alpha=0.8, lw=0)
 
@@ -53,25 +54,41 @@ def scatterplotter(x, y, z, caption, output):
     plt.savefig(output, bbox_inches='tight')
     plt.close()
 
-def lineplotter(x, y, xlabel, ylabel, output):
-    from scipy.signal import find_peaks
+def find_sp_peaks(x, y):
     peaks, _ = find_peaks(y)
     smallest_two = sorted(y[peaks])[:2]
     peak_idx1, peak_idx2 = np.where((y == smallest_two[0]) | (y == smallest_two[1]))[0]
-    width = x[peak_idx2] - x[peak_idx1]
+    return x[peak_idx1], x[peak_idx2]
 
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
-    ax.plot(x, y, '-')
-    colors = sns.color_palette()
-    for idx in [peak_idx1, peak_idx2]:
-        ax.axvline(x=x[idx], c=colors[0], ls='--')
-    ax.text((x[peak_idx2] + x[peak_idx2])/2, smallest_two[0], f'$W_\\mathrm{{D}}$ = {width:.1f} ang')
-    ax.set(xlabel=xlabel, ylabel=ylabel)
-    fig.tight_layout()
-    plt.savefig(output, bbox_inches='tight')
-    plt.close()
+def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, plot=True):
+    x_ouyang1, x_ouyang2 = find_sp_peaks(x, y_ouyang)
+    x_refit1, x_refit2 = find_sp_peaks(x, y_refit)
 
-def plot_dislocation(twist_angle, potential, atom_type=1):
+    width_ouyang = x_ouyang2 - x_ouyang1
+    width_refit = x_refit2 - x_refit1
+
+    if plot:
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+        colors = sns.color_palette()
+
+        ax.plot(x, y_refit, '-', color=colors[0], label=f'Refit: $W_\\mathrm{{D}}$ = {width_refit:.1f} ang')
+        for peak_x in [x_refit1, x_refit2]:
+            ax.axvline(x=peak_x, c=colors[0], ls='--')
+
+        ax.plot(x, y_ouyang, '-', color=colors[1], label=f'Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} ang')
+        for peak_x in [x_ouyang1, x_ouyang2]:
+            ax.axvline(x=peak_x, c=colors[1], ls='--')
+
+        ax.set(ylim=(None, 0.25))
+        ax.legend(loc='upper right', fancybox=False, edgecolor='k')
+        ax.set(xlabel=xlabel, ylabel=ylabel)
+        fig.tight_layout()
+        plt.savefig(output, bbox_inches='tight')
+        plt.close()
+
+    return width_ouyang, width_refit
+
+def process_dislocation(twist_angle, potential, atom_type=1):
 
     d1, latvec1 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_initial.txt")
     d2, latvec2 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_final.txt")
@@ -85,15 +102,19 @@ def plot_dislocation(twist_angle, potential, atom_type=1):
     d1_layer['magnitude'] = (dx_bot**2 + dy_bot**2)**0.5
     d1_layer_1d = d1_layer.loc[(0 <= d1_layer['x']) & (d1_layer['x'] <= 1.3), :]
     d1_layer_1d = d1_layer_1d.sort_values(by=['y'])
+    return d1_layer_1d
 
-    from scipy.interpolate import make_interp_spline
-    spline = make_interp_spline(d1_layer_1d.y, d1_layer_1d.magnitude)
-    lin = np.linspace(0, np.max(d1_layer_1d.y), 1000)
+def plot_dislocation(twist_angle):
+    d1_layer_1d_ouyang = process_dislocation(twist_angle, 'ouyang')
+    d1_layer_1d_refit = process_dislocation(twist_angle, 'refit')
 
+    spline_ouyang = make_interp_spline(d1_layer_1d_ouyang.y, d1_layer_1d_ouyang.magnitude)
+    spline_refit = make_interp_spline(d1_layer_1d_refit.y, d1_layer_1d_refit.magnitude)
+    lin = np.linspace(0, np.max(d1_layer_1d_ouyang.y), 1000)
 
-    lineplotter(lin, spline(lin), 'Distance along the line (ang)', 'In-plane displacement magnitude (ang)', f'{twist_angle}_{potential}_mag_1d.pdf')
-    scatterplotter(d1_layer.x, d1_layer.y, d1_layer.magnitude, 'In-plane displacement magnitude (ang)', f'{twist_angle}_{potential}_mag.pdf')
-
+    width_ouyang, width_refit = lineplotter(lin, spline_ouyang(lin), spline_refit(lin), 'Distance along the line (ang)', 'In-plane displacement magnitude (ang)', f'{twist_angle}_mag_1d.pdf')
+    # scatterplotter(d1_layer.x, d1_layer.y, d1_layer.magnitude, 'In-plane displacement magnitude (ang)', f'{twist_angle}_{potential}_mag.pdf')
+    return width_ouyang, width_refit
 
 def plot_energy(twist_angle, potential, atom_type=1):
     d1, latvec1 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_initial.txt")
@@ -108,7 +129,23 @@ def plot_energy(twist_angle, potential, atom_type=1):
 
 
 if __name__ == '__main__':
-    for twist_angle in ['0-99']:
-        for potential in ['ouyang', 'refit']:
-            plot_dislocation(twist_angle, potential)
-            # plot_energy(twist_angle, potential)
+    widths = []
+    for twist_angle in ['0-99', '1-05', '1-08', '1-16', '1-47', '2-0', '2-88', '3-89', '4-4', '5-1', '6-0']:
+        width_ouyang, width_refit = plot_dislocation(twist_angle)
+        widths.append([float(twist_angle.replace('-', '.')), width_ouyang, width_refit])
+
+    d = pd.DataFrame(widths)
+    d.columns = ['twist_angle', 'width_ouyang', 'width_refit']
+
+    d_ouyang = d.copy(deep=True)
+    d_ouyang['potential'] = 'ouyang'
+    d_ouyang['width'] = d_ouyang['width_ouyang']
+
+    d_refit = d.copy(deep=True)
+    d_refit['potential'] = 'refit'
+    d_refit['width'] = d_refit['width_refit']
+
+
+    d = pd.concat([d_ouyang, d_refit], ignore_index=True)[['twist_angle', 'potential', 'width']]
+    print(d)
+    d.to_csv('width.csv', index=False)
