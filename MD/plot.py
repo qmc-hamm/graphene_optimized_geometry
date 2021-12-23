@@ -31,7 +31,7 @@ def dumpfile_to_df(dumpfile):
 
     return df, latvec
 
-def scatterplotter(x, y, z, caption, output):
+def scatterplotter(x, y, z, title, colorbar_label, output, stripe=False):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 5))
     p = plt.scatter(x, y, c=z, cmap='jet', s=2, alpha=0.8, lw=0)
 
@@ -42,8 +42,11 @@ def scatterplotter(x, y, z, caption, output):
         ax.get_position().height
         ])
     cbar = plt.colorbar(p, cax=cax)
-    cbar.set_label(caption, rotation=90, fontsize=9, fontweight='bold', labelpad=8)
+    cbar.set_label(colorbar_label, rotation=90, fontsize=9, fontweight='bold', labelpad=8)
     cbar.ax.tick_params(labelsize=9)
+    ax.text(0.1, 0.9, title, transform=ax.transAxes)
+    if stripe:
+        ax.axvspan(0, 1.3, alpha=0.5, color='#2f2f2f')
     plt.clim(vmin=np.min(z), vmax=np.max(z))
     plt.xticks(fontsize=9)
     plt.yticks(fontsize=9)
@@ -88,7 +91,7 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, plot=True):
 
     return width_ouyang, width_refit
 
-def process_dislocation(twist_angle, potential, atom_type=1):
+def process_dislocation(twist_angle, potential, title, atom_type=1):
 
     d1, latvec1 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_initial.txt")
     d2, latvec2 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_final.txt")
@@ -100,23 +103,24 @@ def process_dislocation(twist_angle, potential, atom_type=1):
     dy_bot = d2_layer['y'] - d2_layer['y']
 
     d1_layer['magnitude'] = (dx_bot**2 + dy_bot**2)**0.5
+    scatterplotter(d1_layer.x, d1_layer.y, d1_layer.magnitude, title, 'In-plane displacement magnitude (ang)', f'{twist_angle}_{potential}_mag.pdf', stripe=True)
+
     d1_layer_1d = d1_layer.loc[(0 <= d1_layer['x']) & (d1_layer['x'] <= 1.3), :]
     d1_layer_1d = d1_layer_1d.sort_values(by=['y'])
     return d1_layer_1d
 
 def plot_dislocation(twist_angle):
-    d1_layer_1d_ouyang = process_dislocation(twist_angle, 'ouyang')
-    d1_layer_1d_refit = process_dislocation(twist_angle, 'refit')
+    d1_layer_1d_ouyang = process_dislocation(twist_angle, 'ouyang', '(a) Ouyang')
+    d1_layer_1d_refit = process_dislocation(twist_angle, 'refit', '(b) Refit')
 
     spline_ouyang = make_interp_spline(d1_layer_1d_ouyang.y, d1_layer_1d_ouyang.magnitude)
     spline_refit = make_interp_spline(d1_layer_1d_refit.y, d1_layer_1d_refit.magnitude)
     lin = np.linspace(0, np.max(d1_layer_1d_ouyang.y), 1000)
 
     width_ouyang, width_refit = lineplotter(lin, spline_ouyang(lin), spline_refit(lin), 'Distance along the line (ang)', 'In-plane displacement magnitude (ang)', f'{twist_angle}_mag_1d.pdf')
-    # scatterplotter(d1_layer.x, d1_layer.y, d1_layer.magnitude, 'In-plane displacement magnitude (ang)', f'{twist_angle}_{potential}_mag.pdf')
     return width_ouyang, width_refit
 
-def plot_energy(twist_angle, potential, atom_type=1):
+def plot_energy(twist_angle, potential, title, atom_type=1):
     d1, latvec1 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_initial.txt")
     d2, latvec2 = dumpfile_to_df(f"kc_rebo_{potential}/raw/simulations/{twist_angle}/dump_final.txt")
 
@@ -124,8 +128,8 @@ def plot_energy(twist_angle, potential, atom_type=1):
     d2_layer_1d = d2_layer.loc[(0 <= d2_layer['x']) & (d2_layer['x'] <= 1.3), :]
     # d2_layer_1d = d2_layer_1d.sort_values(by=['y'])
 
-    lineplotter(d2_layer_1d.y, d2_layer_1d.energy, 'Distance along the line (ang)', 'Energy (eV/atom)', f'{twist_angle}_{potential}_energy_1d.pdf')
-    scatterplotter(d2_layer.x, d2_layer.y, d2_layer.energy, 'Energy (eV/atom)', f'{twist_angle}_{potential}_energy.pdf')
+    # lineplotter(d2_layer_1d.y, d2_layer_1d.energy, 'Distance along the line (ang)', 'Energy (eV/atom)', f'{twist_angle}_{potential}_energy_1d.pdf')
+    scatterplotter(d2_layer.x, d2_layer.y, d2_layer.energy, title, 'Energy (eV/atom)', f'{twist_angle}_{potential}_energy.pdf')
 
 
 if __name__ == '__main__':
@@ -133,6 +137,8 @@ if __name__ == '__main__':
     for twist_angle in ['0-99', '1-05', '1-08', '1-16', '1-47', '2-0', '2-88', '3-89', '4-4', '5-1', '6-0']:
         width_ouyang, width_refit = plot_dislocation(twist_angle)
         widths.append([float(twist_angle.replace('-', '.')), width_ouyang, width_refit])
+        plot_energy(twist_angle, 'ouyang', '(a) Ouyang')
+        plot_energy(twist_angle, 'refit', '(b) Refit')
 
     d = pd.DataFrame(widths)
     d.columns = ['twist_angle', 'width_ouyang', 'width_refit']
