@@ -61,8 +61,8 @@ def get_data(twist_angle, potential, atom_type=1):
     d_rotated['potential'] = potential
     return d_rotated
 
-def scatterplotter(ax, x, y, z, title, strip_width=None, ylabel=None):
-    s = ax.scatter(x, y, c=z, cmap='jet', s=2, alpha=0.8, lw=0)
+def scatterplotter(fig, ax, x, y, z, title, strip_width=None, ylabel=None, colorbar=True):
+    s = ax.scatter(x, y, c=z, cmap='jet', s=2, alpha=1, lw=0, vmin=-7.428, vmax=-7.412)
     ax.text(0.1, 1.02, title, transform=ax.transAxes)
     if strip_width is not None:
         ax.axvspan(0, strip_width, alpha=0.5, color='#2f2f2f')
@@ -72,6 +72,15 @@ def scatterplotter(ax, x, y, z, title, strip_width=None, ylabel=None):
         xlabel='$x$ (ang)', xlim=(0, 140),
         ylabel=ylabel, ylim=(0, 248)
         )
+    if colorbar:
+        cax = fig.add_axes([
+            ax.get_position().x1 + 0.11,
+            ax.get_position().y0 - 0.02, #+ 0.05,
+            0.01, # width of the colorbar
+            ax.get_position().height*1.13
+            ])
+        cax.set_title('Energy (eV/atom)')
+        cbar = ax.figure.colorbar(s, cax=cax)
     return ax, s
 
 def add_colorbar(ax, cax, vmin, vmax):
@@ -85,16 +94,17 @@ def plot_energy_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=
     d2 = get_data(twist_angle, pot2)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
 
-    cax = fig.add_axes([
-        ax2.get_position().x1 + 0.11,
-        ax2.get_position().y0 - 0.01, #+ 0.05,
-        0.02, # width of the colorbar
-        ax2.get_position().height*1.1
-        ])
-    cax.set_title('Energy (eV/atom)')
-    s1, ax1 = scatterplotter(ax1, d1.x, d1.y, d1.energy, label1, ylabel='$y$ (ang)')
-    s2, ax2 = scatterplotter(ax2, d2.x, d2.y, d2.energy, label2, ylabel=None)
-    add_colorbar(ax2, cax, -7.428, -7.412)
+    # cax = fig.add_axes([
+    #     ax2.get_position().x1 + 0.11,
+    #     ax2.get_position().y0 - 0.01, #+ 0.05,
+    #     0.02, # width of the colorbar
+    #     ax2.get_position().height*1.1
+    #     ])
+    # cax.set_title('Energy (eV/atom)')
+    s1, ax1 = scatterplotter(fig, ax1, d1.x, d1.y, d1.energy, label1, ylabel='$y$ (ang)')
+    s2, ax2 = scatterplotter(fig, ax2, d2.x, d2.y, d2.energy, label2, ylabel=None)
+    # ax1.figure.colorbar(s1)
+    # add_colorbar(ax2, cax, -7.427, -7.412)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_side_by_side.pdf', bbox_inches='tight')
 
