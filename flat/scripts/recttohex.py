@@ -166,7 +166,7 @@ def recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, 
     return hex_atom_num, a1, a2, b2, c3, hex_xyz
 
 if __name__=="__main__":
-    theta = 21.78
+    theta = 9.4
     filename = "structure_lammps.txt";
     atom_num, lenx, leny, lenz, xyz = lammps_data_reader(filename)
     theta1 = str(theta)
