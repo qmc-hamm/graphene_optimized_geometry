@@ -66,7 +66,7 @@ def quiverplotter(xyzi, dx, dy, mag, figname):
     fig.set_size_inches(7.5, 10)
     plt.tight_layout()
     fig.savefig(figname, dpi=200)
-    plt.show()
+    # plt.show()
 
 
 
