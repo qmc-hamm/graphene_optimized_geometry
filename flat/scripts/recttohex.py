@@ -120,8 +120,28 @@ def periodic_extension(atom_num, lenx, leny, lenz, px, py, xyz):
             periodic_xyz[i*atom_num*px:(i+1)*atom_num*px,2] = periodic_xyz[(i-1)*atom_num*px:i*atom_num*px,2]
     periodic_atom_num = atom_num*px*py
     return periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz
+def extension(lat, coord, atom_num, Nx, Ny):
+    coord1 = coord.copy()
+    for i in range (1,Nx):
+        newcoord1 = coord1-i*np.array([lat[0,0], 0, 0])
+        coord = np.vstack((coord, newcoord1))
+    for i in range (1,Nx):
+        newcoord1 = coord1+i*np.array([lat[0,0], 0, 0])
+        coord = np.vstack((coord, newcoord1))
+    coord2 = coord.copy()
+    for i in range (1,Ny):
+        newcoord1 = coord2-i*np.array([0, lat[1,1], 0])
+        coord = np.vstack((coord, newcoord1))
+    for i in range (1,Ny):
+        newcoord1 = coord2+i*np.array([0, lat[1,1], 0])
+        coord = np.vstack((coord, newcoord1))
+    lat1 = lat.copy()
+    lat1[0,0] = lat1[0,0]*(Nx+1)
+    lat1[1,1] = lat1[1,1]*(Ny+1)
 
-def recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz, tol):
+    atom_num = atom_num*(Nx+1)*(Ny+1)
+    return atom_num, coord, lat1
+def recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz, lenx, leny,tol):
     '''
     cuts the rectangular cell to hexagonal cell
     
@@ -148,30 +168,71 @@ def recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, 
 
     '''
     angle = 60*np.pi/180
-    a1 = periodic_lenx/2
+    a1 = lenx
     a2 = a1/2
-    b2 = (periodic_lenx*np.cos(angle/2))/2
+    b2 = (lenx*np.cos(angle/2))
     c3 = periodic_lenz
     hex_xyz = np.zeros((int(atom_num/2),3))
     hex_atom_num = int(atom_num/2)
-    p = 0
+    periodic_xyz[(np.abs(periodic_xyz[:,0])<10**-3) & (np.abs(periodic_xyz[:,1])<10**-3), 0:2] = 0
+
+    p = 0 
+    m = 0
     for i in range (periodic_atom_num):
-        if (periodic_xyz[i,1]<periodic_leny/2-tol):
-            if (periodic_xyz[i,0]>periodic_xyz[i,1]/np.tan(angle)-tol) and \
-                (periodic_xyz[i,0]<periodic_lenx/2 + periodic_xyz[i,1]/np.tan(angle)-tol):
-                    hex_xyz[p,0] = periodic_xyz[i,0]
-                    hex_xyz[p,1] = periodic_xyz[i,1]
-                    hex_xyz[p,2] = periodic_xyz[i,2]
-                    p = p+1
+        if ((periodic_xyz[i,1]<leny/2-tol) and (periodic_xyz[i,1]>tol)):
+            m = m+1
+            if (periodic_xyz[i,0]>-tol):
+                if (periodic_xyz[i,0]>periodic_xyz[i,1]/np.tan(angle)-tol) and \
+                    (periodic_xyz[i,0]<lenx + periodic_xyz[i,1]/np.tan(angle)):
+                        hex_xyz[p,0] = periodic_xyz[i,0]
+                        hex_xyz[p,1] = periodic_xyz[i,1]
+                        hex_xyz[p,2] = periodic_xyz[i,2]
+                        p = p+1 
+    print(p, m)
     return hex_atom_num, a1, a2, b2, c3, hex_xyz
+def dump_reader(filename):
+    '''
+    
+
+    input: dump filename
+    output: 
+    atom_num : number of atoms
+    lenx : length along x-direction
+    leny : length along y-direction
+    lenz : length along z-direction
+    xyz : coordinates
+
+    '''
+    f=open(filename, "r")
+    lines=f.readlines()
+    atom_num = int(lines[3].split('\t')[0])
+    lenx = float(lines[5].split(' ')[1])
+    leny = float(lines[6].split(' ')[1])
+    lenz = float(lines[7].split(' ')[1])
+    
+    xyz = np.zeros((atom_num,3))
+    p = np.zeros(atom_num)
+    for i in range (atom_num):
+        p[i] = float(lines[i+9].split(' ')[1])
+        xyz[i,0] = float(lines[i+9].split(' ')[2])
+        xyz[i,1] = float(lines[i+9].split(' ')[3])
+        xyz[i,2] = float(lines[i+9].split(' ')[4])
+    xyz = xyz[(p==1) | (p==2)]
+    atom_num = len(xyz)
+
+    f.close()
+    return atom_num, lenx, leny, lenz, xyz
 
 if __name__=="__main__":
-    theta = 9.4
-    filename = "structure_lammps.txt";
-    atom_num, lenx, leny, lenz, xyz = lammps_data_reader(filename)
+    theta = 1.41
     theta1 = str(theta)
     st = theta1.split('.')
     folder = st[0]+'-'+st[1]
+    filename = folder+"/"+"min_kink1.0";
+    
+    
+    atom_num, lenx, leny, lenz, xyz = dump_reader(filename)
+    xyz1= xyz
     filename1 = "POSCAR_"+folder+".txt";
     filename2 = "POSCAR_"+folder+"_hex.txt";
     a1 = lenx
@@ -180,53 +241,26 @@ if __name__=="__main__":
     c3 = lenz
     POSCAR_writer(filename1, atom_num, a1, a2, b2, c3, xyz)
     px = 2
-    py = 1
-    periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz = periodic_extension(atom_num, lenx, leny, lenz, px, py, xyz)
-    tol = 0.005
-    hex_atom_num, a1, a2, b2, c3, hex_xyz = \
-        recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz, tol)
+    py = 2
+    lat = np.zeros((3,3))
+    lat[0,0] = lenx
+    lat[1,1] = leny
+    lat[2,2] = lenz
     
-    POSCAR_writer(filename2, hex_atom_num, a1, a2, b2, c3, hex_xyz)             
-                    
+    periodic_atom_num, periodic_xyz, lat1 = extension(lat, xyz, atom_num, px, py)
+    periodic_lenx = lat1[0,0] 
+    periodic_leny = lat1[1,1] 
+    periodic_lenz = lat1[2,2]
+    tol = 0.000005
+    hex_atom_num, a1, a2, b2, c3, hex_xyz = \
+        recttohex_cutter(atom_num, periodic_atom_num, periodic_lenx, periodic_leny, periodic_lenz, periodic_xyz, lenx, leny, tol)
+    
+    POSCAR_writer(filename2, hex_atom_num, a1, a2, b2, c3, hex_xyz)       
+
+
                 
 
-'''
 
-theta = 21.78  #Input: Twist angle (Float)
-method = "Flat" #Input: method (String)
-ID = str(uuid.uuid4()) 
-date = 'May 15, 2021' #Input:date (String)
-m = 2
-n = 1
-f=open("POSCAR_21-78_hex.txt","r") #Input: data file to read (This is coded for POSCAR file)
-
-
-lines=f.readlines()
-latx_str = lines[2].split(' ')
-laty_str = lines[3].split(' ')
-latz_str = lines[4].split(' ')
-lat = np.zeros((3,3))
-
-for i in range (0,3):
-    lat[0,i] = float(latx_str[i])
-    lat[1,i] = float(laty_str[i])
-    lat[2,i] = float(latz_str[i])
-
-atom_num = int(lines[6])
-
-coord = np.zeros((atom_num,3))
-
-
-for i in range (0, atom_num):
-    coord_str = lines[i+8].split(' ')
-    coord[i,0] = float(coord_str[0])
-    coord[i,1] = float(coord_str[1])
-    coord[i,2] = float(coord_str[2])
-
-
-f.close()
-
-'''
 
 
 

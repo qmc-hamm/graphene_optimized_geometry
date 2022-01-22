@@ -193,7 +193,7 @@ def dump_reader(filename):
     return atom_num, lenx, leny, lenz, xyz
 
 if __name__=="__main__":
-    theta = 9.4
+    theta = 1.12
     theta1 = str(theta)
     st = theta1.split('.')
     folder = st[0]+'-'+st[1]
