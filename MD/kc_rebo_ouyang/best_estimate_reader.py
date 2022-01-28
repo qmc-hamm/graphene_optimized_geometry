@@ -36,6 +36,7 @@ atoms = Atoms(st, cell=lattice_vector)
 atoms.set_positions(xyz)
 fig, ax = plt.subplots()
 plot_atoms(atoms, ax, radii=0.3)
+
 #date1 = identity.get('date')
 #date = date1.attrs["2"]
 #met = identity.get('method')
