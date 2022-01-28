@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 
 with h5py.File('best_estimate.hdf5', 'r') as hf:
     L = list(hf.keys())
-    ID = L[0]
     identity = hf.get(ID)
     lattice_vector = identity.get('lattice_vector')
     lattice_vector = np.array(lattice_vector)
@@ -29,9 +28,11 @@ with h5py.File('best_estimate.hdf5', 'r') as hf:
     theta = float(np.array(theta))
     method= identity.get('method')
     date = identity.get('date')
+#print(xyz[(np.abs(xyz[:,0])<10**-3)& (np.abs(xyz[:,1])<10**-3)])
+#print(theta)
 
 natoms = len(xyz)
-st = 'C'+str(natoms)
+st = 'C'+str(natoms)s
 atoms = Atoms(st, cell=lattice_vector)
 atoms.set_positions(xyz)
 fig, ax = plt.subplots()
