@@ -82,13 +82,12 @@ width = 1.3
 xyzb_1d = xyzib[(xyzib[:,0]>0) & (xyzib[:,0]<width)]
 magb_1d = magb[(xyzib[:,0]>0) & (xyzib[:,0]<width)]
 arrp = np.vstack((xyzb_1d[:,1],magb_1d))
-print(arrp)
 arrp = np.array(arrp)
 arrp = arrp.T
 arrp = sorted(arrp, key=itemgetter(0))
 arrp = np.array(arrp)
 tol = 10
-print(leny)
+
 X_Y_Spline = make_interp_spline(arrp[:,0], arrp[:,1])
 X = np.linspace(0, leny, 100)
 Y = X_Y_Spline(X)
@@ -98,7 +97,6 @@ Y = X_Y_Spline(X)
 plt.plot(X,Y, '-k', linewidth = 5)
 plt.xticks(fontsize = 18)
 plt.yticks(fontsize = 18)
-plt.xlabel('')
 fig = plt.gcf()
 fig.set_size_inches(7.5, 7.5)
 plt.tight_layout()
