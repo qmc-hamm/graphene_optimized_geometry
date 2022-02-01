@@ -47,7 +47,8 @@ def dump_reader(filename):
 
     f.close()
     return identity, atom_num, lenx, leny, lenz, xyz, sigma, energy
-def quiverplotter(xyzi, dx, dy, mag, figname):
+
+def quiverplotter(xyzi, dx, dy, mag, figname, title):
     plt.figure()
     plt.quiver(xyzi[:,0],xyzi[:,1],dx,dy, mag, cmap = 'jet', headlength = 20 , headwidth = 24, headaxislength = 9) 
     cbar = plt.colorbar()
@@ -57,6 +58,7 @@ def quiverplotter(xyzi, dx, dy, mag, figname):
     plt.yticks(fontsize = 18)
     fig = plt.gcf()
     fig.set_size_inches(7.5, 10)
+    plt.title(title)
     plt.tight_layout()
     fig.savefig(figname, dpi=200)
     # plt.show()
@@ -83,15 +85,15 @@ theta1 = str(theta)
 st = theta1.split('.')
 folder = st[0]+'-'+st[1]
 
-# potential = 'ouyang'
-potential = 'refit'
+potential = 'ouyang'
+# potential = 'refit'
 
 folder1 = f"kc_rebo_{potential}/raw/simulations/"+folder+"/"
 filename1 = folder1+"dump_initial.txt"
 filename2 = folder1+"dump_final.txt"
 
-figname1 = f'{potential}_in-plane_bottom.png'
-figname2 = f'{potential}_in-plane_top.png'
+figname1 = f'{potential}_in-plane_bottom.pdf'
+figname2 = f'{potential}_in-plane_top.pdf'
 f=open(filename1, "r")
 lines=f.readlines()
 identity, atom_num, lenx, leny, lenz, xyzi, sigmai, energyi = dump_reader(filename1)
@@ -114,9 +116,10 @@ magb = np.sqrt(dxb**2+dyb**2)
 dxt = xyzft[:,0]-xyzit[:,0]
 dyt = xyzft[:,1]-xyzit[:,1]
 magt = np.sqrt(dxt**2+dyt**2)
-quiverplotter(xyzib, dxb, dyb, magb, figname1)
-quiverplotter(xyzit, dxt, dyt, magt, figname2)
-
+quiverplotter(xyzib, dxb, dyb, magb, figname1, '(a) Ouyang')
+# quiverplotter(xyzib, dxb, dyb, magb, figname1, '(b) QMC')
+# quiverplotter(xyzit, dxt, dyt, magt, figname2, '')
+exit()
 
 scatterplotter(xyzfb[:,0], xyzfb[:,1], xyzfb[:,2], 5, 2.9, 3.1, "z-displacement ($\AA$)",f"{potential}_out-disp-bottom.png")
 scatterplotter(xyzft[:,0], xyzft[:,1], xyzft[:,2], 5, 6.3, 6.5, "z-displacement ($\AA$)",f"{potential}_out-disp-top.png")
