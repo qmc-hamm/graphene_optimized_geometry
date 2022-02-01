@@ -74,7 +74,7 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, plot=True):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
         colors = sns.color_palette()
 
-        ax.plot(x, y_refit, '-', color=colors[0], label=f'Refit: $W_\\mathrm{{D}}$ = {width_refit:.1f} ang')
+        ax.plot(x, y_refit, '-', color=colors[0], label=f'QMC: $W_\\mathrm{{D}}$ = {width_refit:.1f} ang')
         for peak_x in [x_refit1, x_refit2]:
             ax.axvline(x=peak_x, c=colors[0], ls='--')
 
@@ -111,7 +111,7 @@ def process_dislocation(twist_angle, potential, title, atom_type=1):
 
 def plot_dislocation(twist_angle):
     d1_layer_1d_ouyang = process_dislocation(twist_angle, 'ouyang', '(a) Ouyang')
-    d1_layer_1d_refit = process_dislocation(twist_angle, 'refit', '(b) Refit')
+    d1_layer_1d_refit = process_dislocation(twist_angle, 'refit', '(b) QMC')
 
     spline_ouyang = make_interp_spline(d1_layer_1d_ouyang.y, d1_layer_1d_ouyang.magnitude)
     spline_refit = make_interp_spline(d1_layer_1d_refit.y, d1_layer_1d_refit.magnitude)
@@ -134,11 +134,13 @@ def plot_energy(twist_angle, potential, title, atom_type=1):
 
 if __name__ == '__main__':
     widths = []
-    for twist_angle in ['0-99', '1-05', '1-08', '1-16', '1-47', '2-0', '2-88', '3-89', '4-4', '5-1', '6-0']:
+    for twist_angle in ['0-99',
+    '1-05', '1-08', '1-16', '1-47', '2-0', '2-88', '3-89', '4-4', '5-1', '6-0'
+    ]:
         width_ouyang, width_refit = plot_dislocation(twist_angle)
         widths.append([float(twist_angle.replace('-', '.')), width_ouyang, width_refit])
         plot_energy(twist_angle, 'ouyang', '(a) Ouyang')
-        plot_energy(twist_angle, 'refit', '(b) Refit')
+        plot_energy(twist_angle, 'refit', '(b) QMC')
 
     d = pd.DataFrame(widths)
     d.columns = ['twist_angle', 'width_ouyang', 'width_refit']
