@@ -55,7 +55,7 @@ if __name__=="__main__":
         M[i] = int(tmn[1])
         N[i] = int(tmn[2])
 
-    theta1 = [ 6.0, 5.1, 4.4, 3.89, 2.88, 2.0, 1.47, 1.16, 1.08, 1.05, 0.99]#Input: Twist angle (Float)
+    theta1 = [ 6.0, 5.1, 4.4, 3.89, 2.88, 2.0, 1.47, 1.41, 1.35, 1.29, 1.25, 1.2, 1.16, 1.08, 1.05, 0.99, 0.93, 0.84]#Input: Twist angle (Float)
     for i in range(len(theta1)):
         theta = theta1[i]
         theta2 = str(theta1[i])
