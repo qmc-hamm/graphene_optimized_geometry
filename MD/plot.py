@@ -31,7 +31,7 @@ def dumpfile_to_df(dumpfile):
 
     return df, latvec
 
-def scatterplotter(x, y, z, title, colorbar_label, output, stripe=False):
+def scatterplotter(x, y, z, title, colorbar_label, output, stripe=None):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 5))
     p = plt.scatter(x, y, c=z, cmap='jet', s=2, alpha=0.8, lw=0)
 
@@ -45,8 +45,8 @@ def scatterplotter(x, y, z, title, colorbar_label, output, stripe=False):
     cbar.set_label(colorbar_label, rotation=90, fontsize=9, fontweight='bold', labelpad=8)
     cbar.ax.tick_params(labelsize=9)
     ax.text(0.1, 0.9, title, transform=ax.transAxes)
-    if stripe:
-        ax.axvspan(0, 1.3, alpha=0.5, color='#2f2f2f')
+    if stripe is not None:
+        ax.axvspan(0, stripe, alpha=0.5, color='#2f2f2f')
     plt.clim(vmin=np.min(z), vmax=np.max(z))
     plt.xticks(fontsize=9)
     plt.yticks(fontsize=9)
@@ -152,7 +152,6 @@ if __name__ == '__main__':
     d_refit = d.copy(deep=True)
     d_refit['potential'] = 'refit'
     d_refit['width'] = d_refit['width_refit']
-
 
     d = pd.concat([d_ouyang, d_refit], ignore_index=True)[['twist_angle', 'potential', 'width']]
     print(d)
