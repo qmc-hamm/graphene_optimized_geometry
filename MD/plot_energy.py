@@ -59,7 +59,7 @@ def get_data(twist_angle, potential, relaxed=True, atom_type=1):
     # divide the angle by two because the geometry is setup such that
     # the top layer is twisted counter-clockwise by `twist_angle`/2,
     # and the bottom layer is twisted clockwise by `twist_angle`/2
-    theta = float(twist_angle.replace('-', '.'))/2 *np.pi/180
+    theta = (float(twist_angle.replace('-', '.'))/2) *np.pi/180
     d_rotated = d.copy()
     d_rotated[['x', 'y', 'z']] = rotate_coords(d[['x', 'y', 'z']], theta)
     d_rotated['potential'] = potential
@@ -85,7 +85,7 @@ def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel
 
     ax.set_aspect('equal', 'box')
     ax.set(
-        xlabel='$x$ (ang)', xlim=(0, 140),
+        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(0, 140),
         ylabel=ylabel, ylim=(0, 248)
         )
     vmin = min(z) if vmin is None else vmin
@@ -106,7 +106,7 @@ def quiverplotter(fig, ax, x, y, dx, dy, mag, title, zlabel, ylabel=None, colorb
     ax.text(0.1, 1.02, title, transform=ax.transAxes)
     ax.set_aspect('equal', 'box')
     ax.set(
-        xlabel='$x$ (ang)', xlim=(0, 140),
+        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(0, 140),
         ylabel=ylabel, ylim=(0, 248)
         )
     if colorbar:
@@ -122,8 +122,9 @@ def quiverplotter(fig, ax, x, y, dx, dy, mag, title, zlabel, ylabel=None, colorb
 def plot_energy_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1):
     d1 = get_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_data(twist_angle, pot2, atom_type=atom_type)
+
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.energy, label1, 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel='$y$ (ang)', colorbar=False)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.energy, label1, 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
     scatterplotter(fig, ax2, d2.x, d2.y, d2.energy, label2, 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_energy.pdf', bbox_inches='tight')
@@ -132,7 +133,7 @@ def plot_z_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1):
     d1 = get_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_data(twist_angle, pot2, atom_type=atom_type)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.z, label1, '$z$ (ang)', vmin=2.9, vmax=3.1, ylabel='$y$ (ang)', colorbar=False)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.z, label1, '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
     scatterplotter(fig, ax2, d2.x, d2.y, d2.z, label2, '$z$ (ng)', vmin=2.9, vmax=3.1, ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_z.pdf', bbox_inches='tight')
@@ -141,20 +142,22 @@ def plot_displacement_vectors_side_by_side(twist_angle, pot1, pot2, label1, labe
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    quiverplotter(fig, ax1, d1.x, d1.y, d1.dx, d1.dy, d1.mag, label1, '$r$ (ang)', ylabel='$y$ (ang)', colorbar=False)
-    quiverplotter(fig, ax2, d2.x, d2.y, d2.dx, d2.dy, d2.mag, label2, '$r$ (ang)', ylabel=None, colorbar=True)
+    quiverplotter(fig, ax1, d1.x, d1.y, d1.dx, d1.dy, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
+    quiverplotter(fig, ax2, d2.x, d2.y, d2.dx, d2.dy, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_disp.pdf', bbox_inches='tight')
 
 
-def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip_width=0.25):
+def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip_width=None):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
+    # d1 = d1.loc[(0.2 <= d1.x) & (d1.x < 1.3), :]
+    # d1['x'] += 20
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, label1, '$r$', vmin=0, vmax=None, ylabel='$y$ (ang)', colorbar=False, strip_width=strip_width)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, label2, '$r$', vmin=0, vmax=None, ylabel=None, colorbar=True, strip_width=strip_width)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False, strip_width=strip_width)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True, strip_width=strip_width)
     fig.tight_layout()
-    plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight')
+    plt.savefig(f'{twist_angle}_mag.png', bbox_inches='tight', dpi=600)
 
 def find_sp_peaks(x, y):
     peaks, _ = find_peaks(y)
@@ -162,31 +165,34 @@ def find_sp_peaks(x, y):
     peak_idx1, peak_idx2 = np.where((y == smallest_two[0]) | (y == smallest_two[1]))[0]
     return x[peak_idx1], x[peak_idx2]
 
-def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, plot=True):
+def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output):
     x_ouyang1, x_ouyang2 = find_sp_peaks(x, y_ouyang)
     x_refit1, x_refit2 = find_sp_peaks(x, y_refit)
 
     width_ouyang = x_ouyang2 - x_ouyang1
     width_refit = x_refit2 - x_refit1
 
-    if plot:
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
-        colors = sns.color_palette()
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
+    colors = sns.color_palette()
 
-        ax.plot(x, y_refit, '-', color=colors[0], label=f'QMC: $W_\\mathrm{{D}}$ = {width_refit:.1f} ang')
-        for peak_x in [x_refit1, x_refit2]:
-            ax.axvline(x=peak_x, c=colors[0], ls='--')
+    ax.plot(x, y_refit, '-', color=colors[0],
+        label=f"KC-QMC: $W_\\mathrm{{D}}$ = {width_refit:.1f} " + "$\\mathrm{\\AA}$"
+        )
+    ax.plot(x, y_ouyang, '-', color=colors[1],
+        label=f"KC-Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} " + "$\\mathrm{\\AA}$"
+        )
 
-        ax.plot(x, y_ouyang, '-', color=colors[1], label=f'Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} ang')
-        for peak_x in [x_ouyang1, x_ouyang2]:
-            ax.axvline(x=peak_x, c=colors[1], ls='--')
+    offset = 8
+    ax.annotate(text='', xy=(x_refit2+offset, 0.06), xytext=(x_refit1-offset, 0.06), arrowprops=dict(arrowstyle='<->'))
+    ax.text(108, 0.07, '$W_\\mathrm{{D}}$')
 
-        ax.set(ylim=(None, 0.25))
-        ax.legend(loc='upper right', fancybox=False, edgecolor='k')
-        ax.set(xlabel=xlabel, ylabel=ylabel)
-        fig.tight_layout()
-        plt.savefig(output, bbox_inches='tight')
-        plt.close()
+    ax.set(ylim=(None, 0.3))
+    ax.legend(loc='upper right', frameon=False, edgecolor='k', fontsize=8)
+    ax.set(xlabel=xlabel, xlim=(0, 245),
+        ylabel=ylabel)
+    fig.tight_layout()
+    plt.savefig(output, bbox_inches='tight', dpi=600)
+    plt.close()
 
     return width_ouyang, width_refit
 
@@ -208,20 +214,22 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, plot=True):
 #     g.fig.set_size_inches(3, 3)
 #     plt.savefig(output, bbox_inches='tight')
 
-def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip_width=0.25):
+def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, strip, atom_type=1):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
-    # d = pd.concat([d1, d2], ignore_index=True)
 
-    # d = d.loc[(-strip_width <= d.x) & (d.x < strip_width), :]
+    d1 = d1.loc[(strip[0] <= d1.x) & (d1.x < strip[1]), :]
+    d2 = d2.loc[(strip[0] <= d2.x) & (d2.x < strip[1]), :]
+
     d1 = d1.sort_values(by='y')
     d2 = d2.sort_values(by='y')
-    print(d1)
-    spline_ouyang = make_interp_spline(d1.y, d1.mag)
-    spline_refit = make_interp_spline(d2.y, d2.mag)
+
+    spline1 = make_interp_spline(d1.y, d1.mag)
+    spline2 = make_interp_spline(d2.y, d2.mag)
     lin = np.linspace(0, np.max(d1.y), 1000)
 
-    width_ouyang, width_refit = lineplotter(lin, spline_ouyang(lin), spline_refit(lin), 'Distance along the line (ang)', 'In-plane displacement magnitude (ang)', f'{twist_angle}_mag_1d.pdf')
+    width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.png')
+    # width_ouyang, width_refit = lineplotter(d1.y, d1.mag, d2.mag, 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
     # g = sns.FacetGrid(data=d, hue='potential')
     # colors = sns.color_palette()
     # for i, potential in enumerate(g.hue_names):
@@ -240,8 +248,8 @@ def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, atom
 if __name__ == '__main__':
     widths = []
     for twist_angle in ['0-99']:
-        plot_energy_side_by_side(twist_angle, 'ouyang', 'refit', '(a) Ouyang', '(b) QMC', atom_type=1)
-        plot_z_side_by_side(twist_angle, 'ouyang', 'refit', '(a) Ouyang', '(b) QMC', atom_type=1)
-        plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit', '(a) Ouyang', '(b) QMC', atom_type=1)
-        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', '(a) Ouyang', '(b) QMC', atom_type=1, strip_width=1.3)
-        # plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', '(a) Ouyang', '(b) QMC', atom_type=1, strip_width=1.3)
+        # plot_energy_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
+        # plot_z_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
+        # plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
+        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
+        plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', (0.2, 1.3))
