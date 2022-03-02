@@ -196,24 +196,6 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output):
 
     return width_ouyang, width_refit
 
-# def plot_energy_strip(d, output):
-    # d = pd.concat([d_ouyang, d_refit], ignore_index=True)
-        # d_strip = d.loc[(-strip_width <= d.x) & (d.x < strip_width), :]
-        # print(d_strip.shape)
-
-#     g = sns.FacetGrid(data=d, hue='potential')
-#     colors = sns.color_palette()
-#     for i, potential in enumerate(g.hue_names):
-#         dd = d.loc[d.potential == potential, :]
-#         g.ax.plot(dd.y, dd.energy, 'o-', label=potential, color=colors[i], ms=3, lw=1, mec='white', mew=0.1)
-#     g.ax.legend(bbox_to_anchor=(0.45, 0.72), frameon=False, fontsize=8)
-#     g.set(
-#         xlabel='Distance along the $y$-axis ($\\mathrm{\\AA}$)',
-#         ylabel='Energy (eV/atom)'
-#         )
-#     g.fig.set_size_inches(3, 3)
-#     plt.savefig(output, bbox_inches='tight')
-
 def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, strip, atom_type=1):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
@@ -229,20 +211,7 @@ def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, stri
     lin = np.linspace(0, np.max(d1.y), 1000)
 
     width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.png')
-    # width_ouyang, width_refit = lineplotter(d1.y, d1.mag, d2.mag, 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
-    # g = sns.FacetGrid(data=d, hue='potential')
-    # colors = sns.color_palette()
-    # for i, potential in enumerate(g.hue_names):
-    #     dd = d.loc[d.potential == potential, :]
-    #     g.ax.plot(dd.y, dd.mag, 'o-', label=potential, color=colors[i], ms=3, lw=1, mec='white', mew=0.1)
-    # g.ax.legend(bbox_to_anchor=(0.45, 0.72), frameon=False, fontsize=8)
-    # g.set(
-    #     xlabel='Distance along the $y$-axis ($\\mathrm{\\AA}$)',
-    #     ylabel='Energy (eV/atom)'
-    #     )
-    # g.fig.set_size_inches(3, 3)
-    # plt.savefig(f'{twist_angle}_mag_1d.pdf', bbox_inches='tight')
-    # plt.close()
+
     print(width_ouyang, width_refit)
 
 if __name__ == '__main__':
