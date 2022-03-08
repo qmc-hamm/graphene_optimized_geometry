@@ -59,11 +59,23 @@ def get_data(twist_angle, potential, relaxed=True, atom_type=1):
     # divide the angle by two because the geometry is setup such that
     # the top layer is twisted counter-clockwise by `twist_angle`/2,
     # and the bottom layer is twisted clockwise by `twist_angle`/2
-    theta = (float(twist_angle.replace('-', '.'))/2) *np.pi/180
+    # theta = (float(twist_angle.replace('-', '.'))/2) *np.pi/180
+    theta = 0
     d_rotated = d.copy()
     d_rotated[['x', 'y', 'z']] = rotate_coords(d[['x', 'y', 'z']], theta)
     d_rotated['potential'] = potential
-    return d_rotated
+
+    tile1 = d_rotated.copy()
+    tile1['x'] -= latvec[0][0]
+
+    tile2 = d_rotated.copy()
+    tile2['y'] += latvec[1][1]
+
+    tile3 = d_rotated.copy()
+    tile3['x'] -= latvec[0][0]
+    tile3['y'] += latvec[1][1]
+    d = pd.concat([tile1, tile2, tile3, d_rotated], ignore_index=True)
+    return d
 
 def get_disp_data(twist_angle, pot, atom_type=1):
     '''
@@ -85,8 +97,8 @@ def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel
 
     ax.set_aspect('equal', 'box')
     ax.set(
-        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(0, 140),
-        ylabel=ylabel, ylim=(0, 248)
+        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(-20, 150),
+        ylabel=ylabel, ylim=(None, 250)
         )
     vmin = min(z) if vmin is None else vmin
     vmax = max(z) if vmax is None else vmax
@@ -148,16 +160,17 @@ def plot_displacement_vectors_side_by_side(twist_angle, pot1, pot2, label1, labe
     plt.savefig(f'{twist_angle}_disp.pdf', bbox_inches='tight')
 
 
-def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip_width=None):
+def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip=None):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
-    # d1 = d1.loc[(0.2 <= d1.x) & (d1.x < 1.3), :]
-    # d1['x'] += 20
+    if strip is not None:
+        d1 = d1.loc[(strip[0] <= d1.x) & (d1.x < strip[1]), :]
+        # d1['x'] += 20
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False, strip_width=strip_width)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True, strip_width=strip_width)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True)
     fig.tight_layout()
-    plt.savefig(f'{twist_angle}_mag.png', bbox_inches='tight', dpi=600)
+    plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight', dpi=600)
 
 def find_sp_peaks(x, y):
     peaks, _ = find_peaks(y)
@@ -175,20 +188,21 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3, 3))
     colors = sns.color_palette()
 
-    ax.plot(x, y_refit, '-', color=colors[0],
+    ls = '-'
+    ax.plot(x, y_refit, ls, color=colors[0],
         label=f"KC-QMC: $W_\\mathrm{{D}}$ = {width_refit:.1f} " + "$\\mathrm{\\AA}$"
         )
-    ax.plot(x, y_ouyang, '-', color=colors[1],
+    ax.plot(x, y_ouyang, ls, color=colors[1],
         label=f"KC-Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} " + "$\\mathrm{\\AA}$"
         )
 
     offset = 8
-    ax.annotate(text='', xy=(x_refit2+offset, 0.06), xytext=(x_refit1-offset, 0.06), arrowprops=dict(arrowstyle='<->'))
-    ax.text(108, 0.07, '$W_\\mathrm{{D}}$')
+    # ax.annotate(text='', xy=(x_refit2+offset, 0.06), xytext=(x_refit1-offset, 0.06), arrowprops=dict(arrowstyle='<->'))
+    # ax.text(108, 0.07, '$W_\\mathrm{{D}}$')
 
-    ax.set(ylim=(None, 0.3))
+    ax.set(ylim=(0.0, 0.3))
     ax.legend(loc='upper right', frameon=False, edgecolor='k', fontsize=8)
-    ax.set(xlabel=xlabel, xlim=(0, 245),
+    ax.set(xlabel=xlabel, xlim=(None, None),
         ylabel=ylabel)
     fig.tight_layout()
     plt.savefig(output, bbox_inches='tight', dpi=600)
@@ -208,17 +222,19 @@ def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, stri
 
     spline1 = make_interp_spline(d1.y, d1.mag)
     spline2 = make_interp_spline(d2.y, d2.mag)
-    lin = np.linspace(0, np.max(d1.y), 1000)
+    lin = np.linspace(0, 250, 1000)
 
-    width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.png')
+    width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
+    # width_ouyang, width_refit = lineplotter(d1.y, d1.mag, d2.mag, 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
 
     print(width_ouyang, width_refit)
 
 if __name__ == '__main__':
-    widths = []
     for twist_angle in ['0-99']:
         # plot_energy_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
         # plot_z_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
         # plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
-        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
-        plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', (0.2, 1.3))
+        strip = (-0.7, 0.7)
+        # strip = (-0.5, 1.3)
+        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', strip=strip)
+        plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', strip)
