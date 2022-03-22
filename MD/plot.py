@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.interpolate import make_interp_spline
-from scipy.signal import find_peaks
+import scipy.interpolate
+import scipy.signal
 import seaborn as sns
 import re
 
@@ -173,14 +173,15 @@ def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, la
     plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight', dpi=600)
 
 def find_sp_peaks(x, y):
-    peaks, _ = find_peaks(y)
+    peaks, _ = scipy.signal.find_peaks(y)
+    print(peaks)
     smallest_two = sorted(y[peaks])[:2]
     peak_idx1, peak_idx2 = np.where((y == smallest_two[0]) | (y == smallest_two[1]))[0]
-    return x[peak_idx1], x[peak_idx2]
+    return x[peak_idx1], y[peak_idx1], x[peak_idx2], y[peak_idx2]
 
-def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output):
-    x_ouyang1, x_ouyang2 = find_sp_peaks(x, y_ouyang)
-    x_refit1, x_refit2 = find_sp_peaks(x, y_refit)
+def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, check_vline=False):
+    x_ouyang1, y_ouyang1, x_ouyang2, y_ouyang2 = find_sp_peaks(x, y_ouyang)
+    x_refit1, y_refit1, x_refit2, y_refit2 = find_sp_peaks(x, y_refit)
 
     width_ouyang = x_ouyang2 - x_ouyang1
     width_refit = x_refit2 - x_refit1
@@ -196,13 +197,26 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output):
         label=f"KC-Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} " + "$\\mathrm{\\AA}$"
         )
 
-    offset = 8
-    # ax.annotate(text='', xy=(x_refit2+offset, 0.06), xytext=(x_refit1-offset, 0.06), arrowprops=dict(arrowstyle='<->'))
-    # ax.text(108, 0.07, '$W_\\mathrm{{D}}$')
+    # annotate Wd with arrows
+    offset_x = 8
+    offset_y = 0.01
+    anno_y = (y_refit1+y_refit2)/2 + offset_y
+    anno_x1 = x_refit1-offset_x
+    anno_x2 = x_refit2+offset_x
+    ax.annotate(text='', xytext=(anno_x1, anno_y), xy=(anno_x2, anno_y), arrowprops=dict(arrowstyle='<->'))
+    anno_x = (x_refit1+x_refit1)/2 + offset_x
+    ax.text(anno_x, anno_y+offset_y, '$W_\\mathrm{{D}}$')
+
+    # draw vertical lines to show where the peaks are
+    if check_vline:
+        ax.axvline(x=x_refit1, color=colors[0])
+        ax.axvline(x=x_refit2, color=colors[0])
+        ax.axvline(x=x_ouyang1, color=colors[1])
+        ax.axvline(x=x_ouyang2, color=colors[1])
 
     ax.set(ylim=(0.0, 0.3))
     ax.legend(loc='upper right', frameon=False, edgecolor='k', fontsize=8)
-    ax.set(xlabel=xlabel, xlim=(None, None),
+    ax.set(xlabel=xlabel, xlim=(x.min(), x.max()),
         ylabel=ylabel)
     fig.tight_layout()
     plt.savefig(output, bbox_inches='tight', dpi=600)
@@ -220,11 +234,11 @@ def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, stri
     d1 = d1.sort_values(by='y')
     d2 = d2.sort_values(by='y')
 
-    spline1 = make_interp_spline(d1.y, d1.mag)
-    spline2 = make_interp_spline(d2.y, d2.mag)
+    spline1 = scipy.interpolate.UnivariateSpline(d1.y, d1.mag, s=0.00005)
+    spline2 = scipy.interpolate.UnivariateSpline(d2.y, d2.mag, s=0.00005)
     lin = np.linspace(0, 250, 1000)
 
-    width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
+    width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the path ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
     # width_ouyang, width_refit = lineplotter(d1.y, d1.mag, d2.mag, 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
 
     print(width_ouyang, width_refit)
