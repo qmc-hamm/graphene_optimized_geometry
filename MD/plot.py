@@ -112,7 +112,7 @@ def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel
     '''
     p = ax.scatter(x, y, c=z, cmap='jet', s=2, lw=0, vmin=vmin, vmax=vmax)
     ax.text(0.1, 1.02, title, transform=ax.transAxes)
-    if draw_strip is not None:
+    if draw_strip:
         # ax.axvspan(0, strip_width, alpha=0.5, color='#2f2f2f')
         strip_x = 2
         strip_y = 124
@@ -169,7 +169,7 @@ def plot_z_side_by_side(twist_angle, pot1, pot2, atom_type=1):
     scatterplotter(fig, ax1, d1.x, d1.y, d1.z, get_pot_label(pot1), '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
     scatterplotter(fig, ax2, d2.x, d2.y, d2.z, get_pot_label(pot2), '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel=None, colorbar=True)
     fig.tight_layout()
-    plt.savefig(f'{twist_angle}_z.pdf', bbox_inches='tight')
+    plt.savefig(f'{twist_angle}_z.png', bbox_inches='tight', dpi=500)
 
 def plot_displacement_vectors_side_by_side(twist_angle, pot1, pot2, atom_type=1):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
@@ -189,7 +189,7 @@ def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, atom_type=
     scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, get_pot_label(pot1), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False, draw_strip=draw_strip)
     scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, get_pot_label(pot2), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True)
     fig.tight_layout()
-    plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight', dpi=600)
+    plt.savefig(f'{twist_angle}_mag.png', bbox_inches='tight', dpi=500)
 
 def find_sp_peaks(x, y):
     peaks, _ = scipy.signal.find_peaks(y)
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     for twist_angle in ['0-99']:
         strip = (-0.7, 0.7)
         # plot_energy_side_by_side(twist_angle, 'ouyang', 'refit')
-        # plot_z_side_by_side(twist_angle, 'ouyang', 'refit')
+        plot_z_side_by_side(twist_angle, 'ouyang', 'refit')
         # plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit')
         plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', draw_strip=True)
         # plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', strip)
