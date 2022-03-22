@@ -43,7 +43,7 @@ def rotate_coords(coords, theta):
     rotated = rotation.dot(coords.T).T
     return rotated
 
-def get_data(twist_angle, potential, relaxed=True, atom_type=1):
+def get_data(twist_angle, potential, relaxed=True, atom_type=1, rotate=False):
     '''
     Creates a data frame from `twist_angle` and `potential`.
     `atom_type` (int):
@@ -56,15 +56,19 @@ def get_data(twist_angle, potential, relaxed=True, atom_type=1):
     # select only one layer
     d = d_all.loc[d_all.atom_type == atom_type, :].reset_index(0, drop=True)
 
-    # divide the angle by two because the geometry is setup such that
-    # the top layer is twisted counter-clockwise by `twist_angle`/2,
-    # and the bottom layer is twisted clockwise by `twist_angle`/2
-    # theta = (float(twist_angle.replace('-', '.'))/2) *np.pi/180
-    theta = 0
+    if rotate:
+        # divide the angle by two because the geometry is setup such that
+        # the top layer is twisted counter-clockwise by `twist_angle`/2,
+        # and the bottom layer is twisted clockwise by `twist_angle`/2
+        theta = (float(twist_angle.replace('-', '.'))/2) *np.pi/180
+    else:
+        theta = 0
+
     d_rotated = d.copy()
     d_rotated[['x', 'y', 'z']] = rotate_coords(d[['x', 'y', 'z']], theta)
     d_rotated['potential'] = potential
 
+    # tile the atoms using periodic boundary condition
     tile1 = d_rotated.copy()
     tile1['x'] -= latvec[0][0]
 
@@ -89,32 +93,49 @@ def get_disp_data(twist_angle, pot, atom_type=1):
     d_init['mag'] = (d_init['dx']**2 + d_init['dy']**2)**0.5
     return d_init
 
-def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel=None, colorbar=True, strip_width=None):
-    p = ax.scatter(x, y, c=z, cmap='jet', s=2, lw=0, vmin=vmin, vmax=vmax)
-    ax.text(0.1, 1.02, title, transform=ax.transAxes)
-    if strip_width is not None:
-        ax.axvspan(0, strip_width, alpha=0.5, color='#2f2f2f')
-
-    ax.set_aspect('equal', 'box')
-    ax.set(
-        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(-20, 150),
-        ylabel=ylabel, ylim=(None, 250)
-        )
-    vmin = min(z) if vmin is None else vmin
-    vmax = max(z) if vmax is None else vmax
-
-    if colorbar:
-        cax = fig.add_axes([
+def create_colorbar(fig, ax, zlabel):
+    '''
+    Makes color bar for the scatterplotter and quiverplotter
+    '''
+    cax = fig.add_axes([
             ax.get_position().x1 + 0.11, # x-coordinate corner
             ax.get_position().y0 - 0.02, # y-coordinate corner
             0.01, # width
             ax.get_position().height*1.13 # height
             ])
-        cax.set_title(zlabel)
-        ax.figure.colorbar(p, cax=cax)
+    cax.set_title(zlabel)
+    return cax
+
+def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel=None, colorbar=True, draw_strip=False):
+    '''
+    Plots the z-values in colors, e.g. energy or in-plane displacement magnitude
+    '''
+    p = ax.scatter(x, y, c=z, cmap='jet', s=2, lw=0, vmin=vmin, vmax=vmax)
+    ax.text(0.1, 1.02, title, transform=ax.transAxes)
+    if draw_strip is not None:
+        # ax.axvspan(0, strip_width, alpha=0.5, color='#2f2f2f')
+        strip_x = 2
+        strip_y = 124
+        lw = 1.2
+        ax.axvline(x=strip_x, lw=lw, color='k')
+        ax.quiver(strip_x, strip_y, 0, 1, angles='xy', headwidth=3, headlength=5, headaxislength=4, zorder=5, pivot='mid', color='k', lw=lw)
+
+    ax.set_aspect('equal', 'box')
+    ax.set(
+        xlabel='$x$ ($\\mathrm{\\AA}$)', xlim=(0, 140),
+        ylabel=ylabel, ylim=(0, 248)
+        )
+    vmin = min(z) if vmin is None else vmin
+    vmax = max(z) if vmax is None else vmax
+
+    if colorbar:
+        ax.figure.colorbar(p, cax=create_colorbar(fig, ax, zlabel))
 
 def quiverplotter(fig, ax, x, y, dx, dy, mag, title, zlabel, ylabel=None, colorbar=True):
-    p = ax.quiver(x, y, dx, dy, mag, cmap='jet', headlength=20, headwidth=24, headaxislength=9)
+    '''
+    Plots the vector field, e.g. in-plane displacement
+    '''
+    p = ax.quiver(x, y, dx, dy, mag, cmap='jet', headwidth=60, headlength=20, headaxislength=9)
     ax.text(0.1, 1.02, title, transform=ax.transAxes)
     ax.set_aspect('equal', 'box')
     ax.set(
@@ -122,59 +143,56 @@ def quiverplotter(fig, ax, x, y, dx, dy, mag, title, zlabel, ylabel=None, colorb
         ylabel=ylabel, ylim=(0, 248)
         )
     if colorbar:
-        cax = fig.add_axes([
-            ax.get_position().x1 + 0.11, # x-coordinate corner
-            ax.get_position().y0 - 0.02, # y-coordinate corner
-            0.01, # width
-            ax.get_position().height*1.13 # height
-            ])
-        cax.set_title(zlabel)
-        ax.figure.colorbar(p, cax=cax)
+        ax.figure.colorbar(p, cax=create_colorbar(fig, ax, zlabel))
 
-def plot_energy_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1):
+def get_pot_label(pot):
+    pot_labels = {
+        'ouyang': '(a) KC-Ouyang',
+        'refit': '(b) KC-QMC'
+        }
+    return pot_labels[pot]
+
+def plot_energy_side_by_side(twist_angle, pot1, pot2, atom_type=1):
     d1 = get_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_data(twist_angle, pot2, atom_type=atom_type)
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.energy, label1, 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.energy, label2, 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel=None, colorbar=True)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.energy, get_pot_label(pot1), 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.energy, get_pot_label(pot2), 'Energy (eV/atom)', vmin=-7.427, vmax=-7.412, ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_energy.pdf', bbox_inches='tight')
 
-def plot_z_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1):
+def plot_z_side_by_side(twist_angle, pot1, pot2, atom_type=1):
     d1 = get_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_data(twist_angle, pot2, atom_type=atom_type)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.z, label1, '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.z, label2, '$z$ (ng)', vmin=2.9, vmax=3.1, ylabel=None, colorbar=True)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.z, get_pot_label(pot1), '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.z, get_pot_label(pot2), '$z$ ($\\mathrm{\\AA}$)', vmin=2.9, vmax=3.1, ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_z.pdf', bbox_inches='tight')
 
-def plot_displacement_vectors_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1):
+def plot_displacement_vectors_side_by_side(twist_angle, pot1, pot2, atom_type=1):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    quiverplotter(fig, ax1, d1.x, d1.y, d1.dx, d1.dy, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
-    quiverplotter(fig, ax2, d2.x, d2.y, d2.dx, d2.dy, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', ylabel=None, colorbar=True)
+    quiverplotter(fig, ax1, d1.x, d1.y, d1.dx, d1.dy, d1.mag, get_pot_label(pot1), '$r$ ($\\mathrm{\\AA}$)', ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
+    quiverplotter(fig, ax2, d2.x, d2.y, d2.dx, d2.dy, d2.mag, get_pot_label(pot2), '$r$ ($\\mathrm{\\AA}$)', ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_disp.pdf', bbox_inches='tight')
 
 
-def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, label1, label2, atom_type=1, strip=None):
+def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, atom_type=1, draw_strip=True):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
-    if strip is not None:
-        d1 = d1.loc[(strip[0] <= d1.x) & (d1.x < strip[1]), :]
-        # d1['x'] += 20
+
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
-    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, label1, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, label2, '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True)
+    scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, get_pot_label(pot1), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False, draw_strip=draw_strip)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, get_pot_label(pot2), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True)
     fig.tight_layout()
     plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight', dpi=600)
 
 def find_sp_peaks(x, y):
     peaks, _ = scipy.signal.find_peaks(y)
-    print(peaks)
     smallest_two = sorted(y[peaks])[:2]
     peak_idx1, peak_idx2 = np.where((y == smallest_two[0]) | (y == smallest_two[1]))[0]
     return x[peak_idx1], y[peak_idx1], x[peak_idx2], y[peak_idx2]
@@ -190,10 +208,12 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, check_vline=False)
     colors = sns.color_palette()
 
     ls = '-'
-    ax.plot(x, y_refit, ls, color=colors[0],
+    ax.plot(x, y_refit, ls,
+        color=colors[0],
         label=f"KC-QMC: $W_\\mathrm{{D}}$ = {width_refit:.1f} " + "$\\mathrm{\\AA}$"
         )
-    ax.plot(x, y_ouyang, ls, color=colors[1],
+    ax.plot(x, y_ouyang, ls,
+        color=colors[1],
         label=f"KC-Ouyang: $W_\\mathrm{{D}}$ = {width_ouyang:.1f} " + "$\\mathrm{\\AA}$"
         )
 
@@ -224,7 +244,7 @@ def lineplotter(x, y_ouyang, y_refit, xlabel, ylabel, output, check_vline=False)
 
     return width_ouyang, width_refit
 
-def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, strip, atom_type=1):
+def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, strip, atom_type=1):
     d1 = get_disp_data(twist_angle, pot1, atom_type=atom_type)
     d2 = get_disp_data(twist_angle, pot2, atom_type=atom_type)
 
@@ -239,16 +259,12 @@ def plot_displacement_magnitude_1d(twist_angle, pot1, pot2, label1, label2, stri
     lin = np.linspace(0, 250, 1000)
 
     width_ouyang, width_refit = lineplotter(lin, spline1(lin), spline2(lin), 'Distance along the path ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
-    # width_ouyang, width_refit = lineplotter(d1.y, d1.mag, d2.mag, 'Distance along the line ($\\mathrm{\\AA}$)', 'In-plane displacement magnitude ($\\mathrm{\\AA}$)', f'{twist_angle}_mag_1d.pdf')
-
-    print(width_ouyang, width_refit)
 
 if __name__ == '__main__':
     for twist_angle in ['0-99']:
-        # plot_energy_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
-        # plot_z_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
-        # plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC')
         strip = (-0.7, 0.7)
-        # strip = (-0.5, 1.3)
-        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', strip=strip)
-        plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', '(a) KC-Ouyang', '(b) KC-QMC', strip)
+        # plot_energy_side_by_side(twist_angle, 'ouyang', 'refit')
+        # plot_z_side_by_side(twist_angle, 'ouyang', 'refit')
+        # plot_displacement_vectors_side_by_side(twist_angle, 'ouyang', 'refit')
+        plot_displacement_magnitude_side_by_side(twist_angle, 'ouyang', 'refit', draw_strip=True)
+        # plot_displacement_magnitude_1d(twist_angle, 'ouyang', 'refit', strip)
