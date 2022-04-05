@@ -113,12 +113,17 @@ def scatterplotter(fig, ax, x, y, z, title, zlabel, vmin=None, vmax=None, ylabel
     p = ax.scatter(x, y, c=z, cmap='jet', s=2, lw=0, vmin=vmin, vmax=vmax)
     ax.text(0.1, 1.02, title, transform=ax.transAxes)
     if draw_strip:
-        # ax.axvspan(0, strip_width, alpha=0.5, color='#2f2f2f')
+        colors = sns.color_palette()
+        color = {
+            '(b) KC-QMC': colors[0],
+            '(a) KC-Ouyang': colors[1],
+        }[title]
+        ax.axvspan(0, 4, alpha=0.9, color=color)
         strip_x = 2
         strip_y = 124
-        lw = 1.2
-        ax.axvline(x=strip_x, lw=lw, color='k')
-        ax.quiver(strip_x, strip_y, 0, 1, angles='xy', headwidth=3, headlength=5, headaxislength=4, zorder=5, pivot='mid', color='k', lw=lw)
+        lw = 5
+        # ax.axvline(x=strip_x, lw=lw, color='k')
+        # ax.quiver(strip_x, strip_y, 0, 1, angles='xy', headwidth=3, headlength=5, headaxislength=4, zorder=5, pivot='mid', color='k', lw=lw)
 
     ax.set_aspect('equal', 'box')
     ax.set(
@@ -187,9 +192,9 @@ def plot_displacement_magnitude_side_by_side(twist_angle, pot1, pot2, atom_type=
 
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, sharey=True, figsize=(6, 5))
     scatterplotter(fig, ax1, d1.x, d1.y, d1.mag, get_pot_label(pot1), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel='$y$ ($\\mathrm{\\AA}$)', colorbar=False, draw_strip=draw_strip)
-    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, get_pot_label(pot2), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True)
+    scatterplotter(fig, ax2, d2.x, d2.y, d2.mag, get_pot_label(pot2), '$r$ ($\\mathrm{\\AA}$)', vmin=0, vmax=None, ylabel=None, colorbar=True, draw_strip=draw_strip)
     fig.tight_layout()
-    plt.savefig(f'{twist_angle}_mag.png', bbox_inches='tight', dpi=500)
+    plt.savefig(f'{twist_angle}_mag.pdf', bbox_inches='tight', dpi=500)
 
 def find_sp_peaks(x, y):
     peaks, _ = scipy.signal.find_peaks(y)
