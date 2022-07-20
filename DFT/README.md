@@ -1,10 +1,7 @@
-Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by DFT simulations.
+DFT structure data 
+====================
 
-
-Input: POSCAR file of twist angles Output: best_estimate.hdf5 which contains Lattice constant, coordinates, number of atoms, twist angle, method, [m,n], date
-
-All units in Angstrom
-
+DFT relaxation simulations are conducted by using PBE+vdW method developed by Tkatchenko and Scheffler [PhysRev B 87, 064110 (2013)](https://link.aps.org/doi/10.1103/PhysRevB.87.064110).
 
 Data available for the following twist angles (degrees):
 4.4, 6.0, 7.3, 9.4 
