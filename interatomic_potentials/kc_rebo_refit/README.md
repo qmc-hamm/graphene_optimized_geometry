@@ -1,10 +1,7 @@
-Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by MD simulations. 
+Relaxed structure data by using classical potentials 
+======================================================
 
-Input: POSCAR file of twist angles
-Output: best_estimate.hdf5 which contains
-        Lattice constant, coordinates, number of atoms, twist angle, method, [m,n], date
-
-All units in Angstrom
+Relaxed atomic structures are found by molecular static calculations using REBO potential [Journal of Physics: Condensed Matter 14.4 (2002)](https://iopscience.iop.org/article/10.1088/0953-8984/14/4/312) for intralayer interaction and Kolmogorov-Crespi (KC) potential fitted by Mick et al. [Paper in preparation].
 
 Data available for the following twist angles (degrees):
-6.0, 5.1, 4.4, 3.89, 2.88, 2.0, 1.47, 1.41, 1.35, 1.29, 1.25, 1.2, 1.16, 1.08, 1.05, 0.99
+6.0, 5.1, 4.4, 3.89, 2.88, 2.0, 1.47, 1.41, 1.35, 1.29, 1.25, 1.2, 1.16, 1.08, 1.05, 0.99, 0.93, 0.84
