@@ -5,10 +5,15 @@ This repository contains a compilation of relaxed geometries for twisted bilayer
 
 The purpose of this repository is to enable sharing of geometries and facilitate comparisons of geometries obtained using different methods. These geometries can, for example, be analyzed using tight-binding models, etc. 
 
-To use: 
+To Use:
+--------------
 
+Hello
 
 Directories: 
+--------------
+
+Hello 
 
 
 
