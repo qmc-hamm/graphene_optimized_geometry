@@ -27,6 +27,9 @@ To Use:
   - theta : twist angle  <br>
   - method : how the geometries are obtained  <br>
   - date : date created 
+
+
+  - do we want one script in each directory, or just one parent script in main directory?  They are carbon copies of each other. 
     
 - create_best_estimate.py : add new data set to hdf5 file 
   - do we want this open/available in general? not sure. 
