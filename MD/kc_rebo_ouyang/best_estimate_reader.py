@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 with h5py.File('best_estimate.hdf5', 'r') as hf:
     L = list(hf.keys())
+    ID = L[0]
     identity = hf.get(ID)
     lattice_vector = identity.get('lattice_vector')
     lattice_vector = np.array(lattice_vector)
@@ -30,9 +31,20 @@ with h5py.File('best_estimate.hdf5', 'r') as hf:
     date = identity.get('date')
 #print(xyz[(np.abs(xyz[:,0])<10**-3)& (np.abs(xyz[:,1])<10**-3)])
 #print(theta)
-
+'''
+with h5py.File('best_estimate.hdf5', 'r') as hf:
+    L = list(hf.keys())
+    for i in range (len(L)):
+    
+        ID = L[i]
+        identity = hf.get(ID)
+        theta = identity.get('theta')  #twist angles
+        theta = float(np.array(theta))
+        print(theta)
+        
+'''
 natoms = len(xyz)
-st = 'C'+str(natoms)s
+st = 'C'+str(natoms)
 atoms = Atoms(st, cell=lattice_vector)
 atoms.set_positions(xyz)
 fig, ax = plt.subplots()
