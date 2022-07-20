@@ -12,7 +12,7 @@ Each directory contains geometries obtained using select methods. Each sub-direc
 
 - rigid: unrelaxed twisted bilayer graphene (i.e. rigid rotations without symmetry breaking) 
 - continuum: linear elasticity theory, based on [Phys. Rev. B 102, 184107 (2020)](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.102.184107). 
-- interatomic_potentials: empirical potential combinations including (i) pure Rebo, (ii) Kolmogorov-Crespi (KC-Ouyang), and (iii) QMC-fitted KC (KC-Mick)
+- interatomic_potentials: empirical potential combinations including (i) Rebo + Kolmogorov-Crespi (KC-Ouyang), and (ii) Rebo + QMC-fitted KC (KC-Mick)
 - DFT: PBE+TSvdW relaxed 
 
 
