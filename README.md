@@ -1,6 +1,5 @@
-
-
-<font size="+2"> Twisted Bilayer Graphene Geometry Library </font>
+Twisted Bilayer Graphene -- Geometry Library
+======================================================================
   
 This repository contains a compilation of relaxed geometries for twisted bilayer graphene for a variety of twist angles, as obtained using a selection of different methods: first-principles density functional theory, classical interatomic potentials, and linear continuum elasticity theory.  There is also a directory containing rigidly twisted bilayers, without relaxation. 
 
