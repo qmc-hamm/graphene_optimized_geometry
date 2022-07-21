@@ -1,0 +1,1 @@
+recttohex.py converts the output from MD to a POSCAR file of hexagonal cell.
