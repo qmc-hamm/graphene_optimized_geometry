@@ -1,8 +1,5 @@
-Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices without relaxation. 
-
-Input: POSCAR file of twist angles Output: best_estimate.hdf5 which contains Lattice constant, coordinates, number of atoms, twist angle, method, [m,n], date
-
-All units in Angstrom
+Rigid flat structure of twisted bilayer graphene
+===================================
 
 
 
