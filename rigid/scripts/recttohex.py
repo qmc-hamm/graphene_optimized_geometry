@@ -224,17 +224,17 @@ def dump_reader(filename):
     return atom_num, lenx, leny, lenz, xyz
 
 if __name__=="__main__":
-    theta = 1.41
+    theta = 1.08
     theta1 = str(theta)
     st = theta1.split('.')
     folder = st[0]+'-'+st[1]
     filename = folder+"/"+"min_kink1.0";
     
-    
-    atom_num, lenx, leny, lenz, xyz = dump_reader(filename)
-    xyz1= xyz
     filename1 = "POSCAR_"+folder+".txt";
     filename2 = "POSCAR_"+folder+"_hex.txt";
+    atom_num, lenx, leny, lenz, xyz = dump_reader(filename)
+    xyz1= xyz
+    
     a1 = lenx
     a2 = 0.0
     b2 = leny

@@ -1,4 +1,4 @@
-Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by MD simulations. 
+Create_best_estimate.py documents best estimate for twisted bilayer graphene coordinates and lattices obtained by MD simulations using REBO and QMC fitted KC potentials (KC-Mick). 
 
 Input: POSCAR file of twist angles
 Output: best_estimate.hdf5 which contains
